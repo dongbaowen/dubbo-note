@@ -1,0 +1,181 @@
+Environment 
+    profile
+    servlet params info
+    conversionService
+
+Context
+    factories
+    environment
+    beanFactory
+    BeanDefinitionReader
+    BeanDefinitionScanner
+
+BeanFactory
+    singletonObjects
+    beanClassLoader
+    beanDefinitionNames
+    beanDefinitionMap
+    resolvableDependencies
+
+
+
+
+
+
+ServiceBean 与 UserService 之间有关系
+org.springframework.beans.factory.support.AbstractBeanFactory#mergedBeanDefinitions 去维系的
+
+ServiceBean 的 afterPropertiesSet 方法
+通过org.springframework.beans.factory.BeanFactoryUtils#beansOfTypeIncludingAncestors()方法从spring 的上下文中获取的
+
+
+
+
+
+
+org.springframework.boot.SpringApplication#run(java.lang.String...) —— springboot 核心run 方法
+
+run
+    创建 Environment
+    创建 ApplicationContext - AnnotationConfigServletWebServerApplicationContext
+        创建 BeanDefinitionReader 和 BeanDefinitionScanner
+        创建 BeanDefinitionLoader
+        BeanDefinitionLoader.load() 把启动类加入 beanDefinitionMap
+        创建 BeanFactory - DefaultListableBeanFactory
+    refresh
+        1、prepareRefresh：
+            添加listenter
+        2、obtainFreshBeanFactory 
+            是否需要刷新 beanFactory
+        3、prepareBeanFactory：给 beanFactory 设置一些属性
+            设置 beanFactory 的类加载器
+            设置 beanPostProcessors ApplicationContextAwareProcessor 在创建bean之前将 applictionContext设置进去。beanPostProcessors 是集合
+            将 EnvironmentAware、EmbeddedValueResolverAware、ResourceLoaderAware、ApplicationEventPublisherAware、MessageSourceAware、ApplicationContextAware  取消自动注入，因为ApplicationContextAwareProcessor把这5个接口的实现工作做了
+            设置 beanFactory 的 resolvableDependencies 
+        4、invokeBeanFactoryPostProcessors 执行 beanFactory 的后处理
+            在Spring容器中找出实现了BeanFactoryPostProcessor接口的processor并执行。Spring容器会委托给PostProcessorRegistrationDelegate的invokeBeanFactoryPostProcessors方法执行
+                循环 beanFactoryPostProcessors，进行调用各自的 postProcessBeanDefinitionRegistry
+                
+                // BeanDefinition注册的后处理器操作
+                从 beanFactory中的 【beanDefinitionNames 和 manualSingletonNames】 获取 BeanDefinitionRegistryPostProcessor(ConfigurationClassPostProcessor)，并设置到 beanFactory 的相关集合中
+                循环 上一步获取的processor集合，如果匹配PriorityOrdered，则进行后处理调用
+                进行排序 currentRegistryProcessors
+                加到registryProcessors中
+                进行currentRegistryProcessors循环调用后处理 postProcessBeanDefinitionRegistry
+                    ConfigurationClassPostProcessor 执行后处理逻辑
+                        如果是注解解析器，如果主触发类上包含 ComponentScans注解，ConfigurationClassParse 触发扫描所有 component 
+                        将扫描到的 bean 注册入 beanFactory 的 beanDefinitionMap 中
+                清空 currentRegistryProcessors
+
+                // BeanDefinition注册的后处理器操作
+                再次 从 beanFactory中的 【beanDefinitionNames 和 manualSingletonNames】 获取 BeanDefinitionRegistryPostProcessor(ConfigurationClassPostProcessor)，并设置到 beanFactory 的相关集合中
+                循环 上一步获取的processor集合，如果匹配Ordered，则进行后处理调用
+                进行排序 currentRegistryProcessors
+                加到registryProcessors中
+                进行currentRegistryProcessors循环调用后处理 postProcessBeanDefinitionRegistry
+                清空 currentRegistryProcessors
+
+                // BeanFactory 的后处理器操作
+
+            【兜底操作？】
+
+        5、registerBeanPostProcessors
+            从beanFactory中的 【beanDefinitionNames 和 manualSingletonNames】获取 beanFactory 的所有 BeanPostProcessor
+            按照优先级分类，归到不同的集合当中
+            进行排序
+            进行注册
+                将 BeanPostProcessor 加入到 beanFacotry 中的 beanPostProcessors
+        6、initMessageSource
+        7、initApplicationEventMulticaster
+            创建【event multicaster】，并注册到 beanFactory 的 singletonObjects
+        8、onRefresh
+            创建 webServer
+            初始化属性
+        9、registerListeners
+            给 EventMulticaster 注册上所有的 listners
+        10、finishBeanFactoryInitialization
+            从beanFactory中的 【beanDefinitionNames 和 manualSingletonNames】获取 beanFactory 的所有 LoadTimeWeaverAware
+            preInstantiateSingletons 创建剩余的bean
+                遍历 beanDefinitionNames
+                    如果是 factoryBean
+                        ？
+                    如果是普通 bean
+                        ？
+        11、finishRefresh
+            initLifecycleProcessor
+                创建【LifecycleProcessor】，并设置到 beanFactory 中
+            onRefresh
+            publishEvent 发布 finish 的事件 【ContextRefreshedEvent】
+                获取所有 application lisenter
+                执行 lisenter 的 onApplicationEvent 方法（dubbo 服务暴露的入口）
+
+
+
+
+bean 声明周期
+BeanFactoryPostProcessor
+InstantiationAwareBeanPostProcessorAdapter
+BeanPostProcessor
+
+
+
+
+
+
+疑点:
+1、MergedBeanDefinition 的概念，userService 是如何跟 ServiceBean 建立关系的？
+2、一系列复杂的 PostProcessor 的处理
+3、singletonObject 是从哪里塞入的
+4、ServiceBean 是从何时进入 listner的集合当中的？
+5、何时塞入 beanFactory 中的 beanDefinitionMap 的？
+6、bean的声明周期
+7、resolvableDependencies 是做什么用的
+
+
+解决的问题：
+5、何时塞入 beanFactory 中的 beanDefinitionMap 的？
+    5.1、一些 postProcessor 会在 postProcessBeanFactory 的时候塞入
+    5.2、普通的业务使用的一些bean，在invokeBeanFactoryPostProcessors中会进行扫描，然后加进去
+6、已经搞定
+
+
+
+
+额外的知识：
+给 beanFacotry 中加 BeanPostProcessor，在用 beanFactory getBean的时候会触发响应的方法
+
+
+
+
+
+
+
+添加后处理：
+invokeBeanFactoryPostProcessors 执行所有beanFactory后处理器
+
+finishBeanFactoryInitialization
+    实例化单例 执行 beanFactory 的 createBean
+        实例化前操作
+            在 beanFactory 中的 resolveBeforeInstantiation 遍历所有 InstantiationAwareBeanPostProcessor，执行 postProcessBeforeInstantiation 方法
+            获取构造器
+                获取构造器之前操作
+                    在 beanFactory 中获取所有的 SmartInstantiationAwareBeanPostProcessor，执行 determineCandidateConstructors 方法
+        实例化 bean 
+            默认使用无参构造器，调用 BeanUtils.instantiateClass
+        实例化后操作
+            populateBean 填入内容
+                在 beanFactory 中获取所有的 BeanUtils.instantiateClass
+                    执行 postProcessAfterInstantiation 方法
+                    执行 postProcessProperties 方法
+            initializeBean 初始化 bean
+                执行 BeanFactoryAware 接口的 setBeanFactory 方法
+                从 beanFactory 中获取所有的 BeanPostProcessor，其中包含 ApplicationContextAwareProcessor ，执行它的 postProcessBeforeInitialization
+                初始化完成，执行 bean 自己的 @PostConstruct
+                执行 InitializingBean 的 afterPropertiesSet 方法
+                从 beanFactory 中获取所有的 BeanPostProcessor，执行 postProcessAfterInitialization 方法
+
+                
+
+
+bean的生命周期
+

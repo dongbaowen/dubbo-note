@@ -63,7 +63,7 @@ public class RegistryProtocol implements Protocol {
     /**
      * 绑定关系集合。
      *
-     * key：服务 Dubbo URL
+     * key：服务提供者 Dubbo URL
      */
     // To solve the problem of RMI repeated exposure port conflicts, the services that have been exposed are no longer exposed.
     // 用于解决rmi重复暴露端口冲突的问题，已经暴露过的服务不再重新暴露

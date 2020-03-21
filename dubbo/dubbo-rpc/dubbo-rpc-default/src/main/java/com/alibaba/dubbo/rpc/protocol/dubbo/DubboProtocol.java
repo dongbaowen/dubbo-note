@@ -65,7 +65,7 @@ public class DubboProtocol extends AbstractProtocol {
     /**
      * 通信服务器集合
      *
-     * key: 服务器地址。格式为：host:port
+     * key: 服务器地址。格式为：host:port todo 是什么服务器啊
      */
     private final Map<String, ExchangeServer> serverMap = new ConcurrentHashMap<String, ExchangeServer>(); // <host:port,Exchanger>
     /**

@@ -30,41 +30,23 @@ import com.alibaba.dubbo.config.invoker.DelegateProviderMetaDataInvoker;
 import com.alibaba.dubbo.config.model.ApplicationModel;
 import com.alibaba.dubbo.config.model.ProviderModel;
 import com.alibaba.dubbo.config.support.Parameter;
-import com.alibaba.dubbo.rpc.Exporter;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.Protocol;
-import com.alibaba.dubbo.rpc.ProxyFactory;
-import com.alibaba.dubbo.rpc.ServiceClassHolder;
+import com.alibaba.dubbo.rpc.*;
 import com.alibaba.dubbo.rpc.cluster.ConfiguratorFactory;
 import com.alibaba.dubbo.rpc.service.GenericService;
 import com.alibaba.dubbo.rpc.support.ProtocolUtils;
 
 import java.lang.reflect.Method;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.net.*;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.dubbo.common.utils.NetUtils.LOCALHOST;
-import static com.alibaba.dubbo.common.utils.NetUtils.getAvailablePort;
-import static com.alibaba.dubbo.common.utils.NetUtils.getLocalHost;
-import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidLocalHost;
-import static com.alibaba.dubbo.common.utils.NetUtils.isInvalidPort;
+import static com.alibaba.dubbo.common.utils.NetUtils.*;
 
 /**
  * ServiceConfig
- *
+ * <p>
  * 服务提供者暴露服务配置。
  * 参数详细：http://dubbo.io/books/dubbo-user-book/references/xml/dubbo-service.html
  *
@@ -86,7 +68,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 协议名对应生成的随机端口
-     *
+     * <p>
      * key ：协议名
      * value ：端口
      */
@@ -99,7 +81,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 服务配置对应的 Dubbo URL 数组
-     *
+     * <p>
      * 非配置。
      */
     private final List<URL> urls = new ArrayList<URL>();
@@ -107,9 +89,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 服务配置暴露的 Exporter 。
      * URL ：Exporter 不一定是 1：1 的关系。
      * 例如 {@link #scope} 未设置时，会暴露 Local + Remote 两个，也就是 URL ：Exporter = 1：2
-     *      {@link #scope} 设置为空时，不会暴露，也就是 URL ：Exporter = 1：0
-     *      {@link #scope} 设置为 Local 或 Remote 任一时，会暴露 Local 或 Remote 一个，也就是 URL ：Exporter = 1：1
-     *
+     * {@link #scope} 设置为空时，不会暴露，也就是 URL ：Exporter = 1：0
+     * {@link #scope} 设置为 Local 或 Remote 任一时，会暴露 Local 或 Remote 一个，也就是 URL ：Exporter = 1：1
+     * <p>
      * 非配置。
      */
     private final List<Exporter<?>> exporters = new ArrayList<Exporter<?>>();
@@ -117,7 +99,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
     private String interfaceName;
     /**
      * {@link #interfaceName} 对应的接口类
-     *
+     * <p>
      * 非配置
      */
     private Class<?> interfaceClass;
@@ -134,20 +116,20 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 是否已经暴露服务，参见 {@link #doExport()} 方法。
-     *
+     * <p>
      * 非配置。
      */
     private transient volatile boolean exported;
     /**
      * 是否已取消暴露服务，参见 {@link #unexport()} 方法。
-     *
+     * <p>
      * 非配置。
      */
     private transient volatile boolean unexported;
     /**
      * 是否泛化实现，参见 <a href="https://dubbo.gitbooks.io/dubbo-user-book/demos/generic-service.html">实现泛化调用</a>
      * true / false
-     *
+     * <p>
      * 状态字段，非配置。
      */
     private volatile String generic; // TODO 芋艿
@@ -234,7 +216,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 添加随机端口到缓存中
      *
      * @param protocol 协议名
-     * @param port 端口
+     * @param port     端口
      */
     private static void putRandomPort(String protocol, Integer port) {
         protocol = protocol.toLowerCase();
@@ -286,7 +268,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     doExport();
                 }
             }, delay, TimeUnit.MILLISECONDS);
-        // 立即暴露
+            // 立即暴露
         } else {
             doExport();
         }
@@ -352,7 +334,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             if (StringUtils.isEmpty(generic)) {
                 generic = Boolean.TRUE.toString();
             }
-        // 普通接口的实现
+            // 普通接口的实现
         } else {
             try {
                 interfaceClass = Class.forName(interfaceName, true, Thread.currentThread().getContextClassLoader());
@@ -420,8 +402,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 校验指向的 service 对象
-     *  1. 非空
-     *  2. 实现 {@link #interfaceClass} 接口
+     * 1. 非空
+     * 2. 实现 {@link #interfaceClass} 接口
      */
     private void checkRef() {
         // reference should not be null, and is the implementation of the given interface
@@ -472,7 +454,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 基于单个协议，暴露服务
      *
      * @param protocolConfig 协议配置对象
-     * @param registryURLs 注册中心链接对象数组
+     * @param registryURLs   注册中心链接对象数组
      */
     private void doExportUrlsFor1Protocol(ProtocolConfig protocolConfig, List<URL> registryURLs) {
         // 协议名
@@ -481,6 +463,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             name = "dubbo";
         }
 
+        /**
+         * step 1: 将所有服务的配置参数封装到map中
+         */
         // 将 `side`，`dubbo`，`timestamp`，`pid` 参数，添加到 `map` 集合中。
         Map<String, String> map = new HashMap<String, String>();
         map.put(Constants.SIDE_KEY, Constants.PROVIDER_SIDE);
@@ -589,6 +574,10 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
             protocolConfig.setRegister(false);
             map.put("notify", "false");
         }
+
+        /**
+         * step 2: 进行服务暴露
+         */
         // export service
         String contextPath = protocolConfig.getContextpath();
         if ((contextPath == null || contextPath.length() == 0) && provider != null) {
@@ -599,7 +588,8 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
         String host = this.findConfigedHosts(protocolConfig, registryURLs, map);
         Integer port = this.findConfigedPorts(protocolConfig, name, map);
 
-        // 创建服务提供者 Dubbo URL 对象
+        /* step 2.1 创建服务提供者 Dubbo URL 对象 */
+        //此时URL中包含provider的ip，port，applicationName 和 contextPath
         URL url = new URL(name, host, port, (contextPath == null || contextPath.length() == 0 ? "" : contextPath + "/") + path, map);
 
         // 配置规则，参见《配置规则》https://dubbo.gitbooks.io/dubbo-user-book/demos/config-rule.html
@@ -642,6 +632,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                         // 创建 DelegateProviderMetaDataInvoker 对象
                         DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                        /**
+                         * step 3: 执行暴露
+                         */
                         // 使用 Protocol 暴露 Invoker 对象
                         Exporter<?> exporter = protocol.export(wrapperInvoker);
                         // 添加到 `exporters`
@@ -654,6 +647,9 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
                     // 创建 DelegateProviderMetaDataInvoker 对象
                     DelegateProviderMetaDataInvoker wrapperInvoker = new DelegateProviderMetaDataInvoker(invoker, this);
 
+                    /**
+                     * step 3: 执行暴露
+                     */
                     // 使用 Protocol 暴露 Invoker 对象
                     Exporter<?> exporter = protocol.export(wrapperInvoker);
                     // 添加到 `exporters`
@@ -694,16 +690,16 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 查找主机 Host ，参见文档《主机绑定》https://dubbo.gitbooks.io/dubbo-user-book/demos/hostname-binding.html
-     *
+     * <p>
      * 推荐阅读文章《dubbo注册服务IP解析异常及IP解析源码分析》 https://segmentfault.com/a/1190000010550512
-     *
+     * <p>
      * Register & bind IP address for service provider, can be configured separately.
      * Configuration priority: environment variables -> java system properties -> host property in config file ->
      * /etc/hosts -> default network address -> first available network address
      *
      * @param protocolConfig 协议配置对象
-     * @param registryURLs 注册中心 URL 数组
-     * @param map 参数集合
+     * @param registryURLs   注册中心 URL 数组
+     * @param map            参数集合
      * @return
      */
     private String findConfigedHosts(ProtocolConfig protocolConfig, List<URL> registryURLs, Map<String, String> map) {
@@ -779,13 +775,13 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
 
     /**
      * 查找端口，参见文档《主机绑定》https://dubbo.gitbooks.io/dubbo-user-book/demos/hostname-binding.html
-     *
+     * <p>
      * Register port and bind port for the provider, can be configured separately
      * Configuration priority: environment variable -> java system properties -> port property in protocol config file
      * -> protocol default port
      *
      * @param protocolConfig 协议配置对象
-     * @param name 协议名
+     * @param name           协议名
      * @return 端口
      */
     private Integer findConfigedPorts(ProtocolConfig protocolConfig, String name, Map<String, String> map) {
@@ -859,7 +855,7 @@ public class ServiceConfig<T> extends AbstractServiceConfig {
      * 从协议配置对象解析对应的配置项
      *
      * @param protocolConfig 协议配置对象
-     * @param key 配置项
+     * @param key            配置项
      * @return 值
      */
     private String getValueFromConfig(ProtocolConfig protocolConfig, String key) {
