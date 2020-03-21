@@ -99,12 +99,14 @@ public abstract class AbstractRegistry implements Registry {
      * 已注册 URL 集合。
      *
      * 注意，注册的 URL 不仅仅可以是服务提供者的，也可以是服务消费者的
+     * 理解：注册表中都包含哪些URL
      */
     private final Set<URL> registered = new ConcurrentHashSet<URL>();
     /**
      * 订阅 URL 的监听器集合
      *
      * key：订阅者的 URL ，例如消费者的 URL
+     * 理解：订阅某个 URL 的，都有哪些监听者
      */
     private final ConcurrentMap<URL, Set<NotifyListener>> subscribed = new ConcurrentHashMap<URL, Set<NotifyListener>>();
     /**
@@ -481,7 +483,7 @@ public abstract class AbstractRegistry implements Registry {
      *
      * @param url 消费者 URL
      * @param listener 监听器
-     * @param urls 通知的 URL 变化结果（全量数据）
+     * @param urls 通知的提供者的 URL 变化结果（全量数据）
      */
     protected void notify(URL url, NotifyListener listener, List<URL> urls) {
         if (url == null) {
