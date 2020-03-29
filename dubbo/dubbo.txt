@@ -131,6 +131,12 @@ run
             进行排序
             进行注册
                 将 BeanPostProcessor 加入到 beanFacotry 中的 beanPostProcessors
+                    org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#doCreateBean
+                    org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#createBeanInstance
+                    org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#instantiateUsingFactoryMethod
+                    org.springframework.beans.factory.support.ConstructorResolver#createArgumentArray
+                    org.springframework.beans.factory.support.DefaultListableBeanFactory#resolveDependency
+                    【此处会创建 referenceBean 实例，referenceBean 实际为 FactoryBean 的实现类，将其添加到 singletonObjects 中】
         6、initMessageSource
         7、initApplicationEventMulticaster
             创建【event multicaster】，并注册到 beanFactory 的 singletonObjects
@@ -140,7 +146,7 @@ run
         9、registerListeners
             给 EventMulticaster 注册上所有的 listners
             从 beanFactory 中获取所有的 ApplicationListener 对象，添加到 listener 集合中
-        10、finishBeanFactoryInitialization
+        10、finishBeanFactoryInitialization —— 此处核心逻辑具体为创建剩余的各类对象，并将其保存到 singletonObjects 中
             从beanFactory中的 【beanDefinitionNames 和 manualSingletonNames】获取 beanFactory 的所有 LoadTimeWeaverAware
             【核心 —— bean 的生命周期】preInstantiateSingletons 创建剩余的bean 
                 遍历 beanDefinitionNames 
@@ -151,7 +157,6 @@ run
                         执行 InstantiationAwareBeanPostProcessorAdapter 的设置属性方法和实例化后方法
                         得到所有的 InstantiationAwareBeanPostProcessor，遍历执行 postProcessProperties 方法
                             通过反射获取 @Resource 修饰的属性（org.springframework.context.annotation.CommonAnnotationBeanPostProcessor#buildResourceMetadata），然后还是通过getBean获取到对象，然后进行注入 
-
                     initializeBean 初始化bean
                         BeanNameAware 的 setBeanName
                         BeanFactoryAware 的 setBeanFactory
